@@ -490,8 +490,7 @@
     }
 
     // ---------- Auto-scroll / focus ----------
-    let suppressScrollUntil = 0;     // pause window after a manual gesture
-    let programmaticScrollUntil = 0; // ignore the scroll events we cause ourselves
+    let suppressScrollUntil = 0; // pause window after a manual gesture
 
     function scrollToCurrent() {
       // Pin the oldest event in the past-30-min window to the top of the visible
@@ -508,7 +507,6 @@
         parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--focus-gap")) ||
         12;
       const top = node.getBoundingClientRect().top + window.scrollY - headerH - gap;
-      programmaticScrollUntil = Date.now() + 1500;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }
 
@@ -523,8 +521,6 @@
     }
 
     function noteUserGesture() {
-      // Ignore scroll events emitted by our own programmatic scrollTo calls.
-      if (Date.now() < programmaticScrollUntil) return;
       suppressScrollUntil = Date.now() + USER_SCROLL_GRACE_MS;
     }
 
