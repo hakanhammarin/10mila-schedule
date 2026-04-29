@@ -30,8 +30,9 @@
       --cat-vaxling: #00b0f0;
       --cat-jaktstart: #0070c0;
 
-      --past-opacity: 0.7; /* 70% intensity remaining, per spec */
-      --focus-offset: 20vh; /* current event lands 20% from the top */
+      --past-opacity: 0.7;       /* events within the last 30 minutes */
+      --long-past-opacity: 0.5;  /* anything older — kept visible but more faded */
+      --focus-gap: 12px;         /* breathing room below the sticky clock header */
     }
 
     * {
@@ -132,7 +133,7 @@
       margin-bottom: 10px;
       transition: opacity 220ms ease, background 220ms ease,
         border-color 220ms ease, transform 220ms ease;
-      scroll-margin-top: var(--focus-offset);
+      scroll-margin-top: calc(var(--clock-h, 92px) + var(--focus-gap));
     }
 
     .event .time {
@@ -200,6 +201,11 @@
 
     .event.past {
       opacity: var(--past-opacity);
+      background: var(--panel-2);
+    }
+
+    .event.long-past {
+      opacity: var(--long-past-opacity);
       background: var(--panel-2);
     }
 
@@ -303,9 +309,10 @@
     // ---------- Configuration ----------
     const CSV_URL = "schedule.csv";
     const RECHECK_MS = 1000;          // tick the clock every second
-    const STATE_REFRESH_MS = 5000;   // re-evaluate which event is "current"
-    const SCROLL_REFRESH_MS = 5000;  // re-pin focus to current event
+    const FOCUS_TICK_MS = 5000;       // re-evaluate "current" + re-pin scroll
     const CSV_RELOAD_MS = 5 * 60 * 1000; // pick up edits to the CSV
+    const USER_SCROLL_GRACE_MS = 6000; // pause auto-scroll briefly after a manual gesture
+    const PAST_WINDOW_MS = 30 * 60 * 1000; // how far back past events stay visible (gray)
 
     // ---------- CSV parser (handles quoted fields, embedded newlines, commas) ----------
     function parseCSV(text) {
@@ -446,15 +453,21 @@
       return idx;
     }
 
-    function applyState(now, { scroll = false } = {}) {
+    function applyState(now) {
       const cur = findCurrentIndex(now);
+      const cutoff = now.getTime() - PAST_WINDOW_MS;
       const nodes = document.querySelectorAll(".event");
       nodes.forEach((node) => {
         const i = +node.dataset.idx;
-        node.classList.remove("past", "current", "future");
-        if (i < cur) node.classList.add("past");
-        else if (i === cur) node.classList.add("current");
-        else node.classList.add("future");
+        node.classList.remove("past", "current", "future", "long-past");
+        if (i < cur) {
+          if (events[i].time.getTime() >= cutoff) node.classList.add("past");
+          else node.classList.add("long-past");
+        } else if (i === cur) {
+          node.classList.add("current");
+        } else {
+          node.classList.add("future");
+        }
       });
 
       const status = document.getElementById("status");
@@ -471,18 +484,48 @@
         statusLine.textContent = "";
       }
 
-      if (scroll && cur !== lastCurrentIndex && cur >= 0) {
-        scrollToCurrent();
-      }
+      const changed = cur !== lastCurrentIndex;
       lastCurrentIndex = cur;
+      return { cur, changed };
     }
 
+    // ---------- Auto-scroll / focus ----------
+    let suppressScrollUntil = 0;     // pause window after a manual gesture
+    let programmaticScrollUntil = 0; // ignore the scroll events we cause ourselves
+
     function scrollToCurrent() {
-      const node = document.querySelector(".event.current");
+      // Pin the oldest event in the past-30-min window to the top of the visible
+      // area (just below the sticky clock). If there's none, the current event
+      // takes that slot. Either way, the highlighted current event ends up at a
+      // variable position on screen, depending on how many past events fit above.
+      const node =
+        document.querySelector(".event.past") ||
+        document.querySelector(".event.current");
       if (!node) return;
-      const top =
-        node.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.2;
-      window.scrollTo({ top, behavior: "smooth" });
+      const header = document.querySelector(".clock-bar");
+      const headerH = header ? header.offsetHeight : 0;
+      const gap =
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--focus-gap")) ||
+        12;
+      const top = node.getBoundingClientRect().top + window.scrollY - headerH - gap;
+      programmaticScrollUntil = Date.now() + 1500;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }
+
+    function tickFocus() {
+      const { cur, changed } = applyState(new Date());
+      if (cur < 0) return;
+      // Always re-pin when the active event changes — no grace period for that.
+      // Otherwise, respect the user's recent manual scroll for a few seconds.
+      if (changed || Date.now() >= suppressScrollUntil) {
+        scrollToCurrent();
+      }
+    }
+
+    function noteUserGesture() {
+      // Ignore scroll events emitted by our own programmatic scrollTo calls.
+      if (Date.now() < programmaticScrollUntil) return;
+      suppressScrollUntil = Date.now() + USER_SCROLL_GRACE_MS;
     }
 
     // ---------- Clock ----------
@@ -502,7 +545,10 @@
       const text = await resp.text();
       const rows = parseCSV(text);
       buildSchedule(rows);
-      applyState(new Date(), { scroll: true });
+      lastCurrentIndex = -1;          // force "changed" on the first apply
+      applyState(new Date());
+      // Wait one frame so the DOM has laid out before we measure scroll position.
+      requestAnimationFrame(() => requestAnimationFrame(scrollToCurrent));
     }
 
     function showError(err) {
@@ -524,9 +570,19 @@
       showError(err);
     });
 
-    setInterval(() => applyState(new Date(), { scroll: false }), STATE_REFRESH_MS);
-    setInterval(() => applyState(new Date(), { scroll: true }), SCROLL_REFRESH_MS);
+    setInterval(tickFocus, FOCUS_TICK_MS);
     setInterval(() => loadCSV().catch((err) => console.warn("CSV reload failed", err)), CSV_RELOAD_MS);
+
+    // Track manual gestures so we briefly back off auto-scroll when the user is reading.
+    window.addEventListener("wheel", noteUserGesture, { passive: true });
+    window.addEventListener("touchstart", noteUserGesture, { passive: true });
+    window.addEventListener("touchmove", noteUserGesture, { passive: true });
+    window.addEventListener("keydown", (e) => {
+      const navKeys = [
+        "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar",
+      ];
+      if (navKeys.includes(e.key)) noteUserGesture();
+    });
 
     // Re-pin if the user resizes (the 20% offset depends on viewport height).
     let resizeTimer = null;
