@@ -303,8 +303,8 @@
     // ---------- Configuration ----------
     const CSV_URL = "schedule.csv";
     const RECHECK_MS = 1000;          // tick the clock every second
-    const STATE_REFRESH_MS = 15000;   // re-evaluate which event is "current"
-    const SCROLL_REFRESH_MS = 30000;  // re-pin focus to current event
+    const STATE_REFRESH_MS = 5000;   // re-evaluate which event is "current"
+    const SCROLL_REFRESH_MS = 5000;  // re-pin focus to current event
     const CSV_RELOAD_MS = 5 * 60 * 1000; // pick up edits to the CSV
 
     // ---------- CSV parser (handles quoted fields, embedded newlines, commas) ----------
@@ -324,7 +324,7 @@
           }
         } else {
           if (c === '"') inQuotes = true;
-          else if (c === ",") { row.push(field); field = ""; }
+          else if (c === ";") { row.push(field); field = ""; }
           else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
           else if (c === "\r") { /* skip */ }
           else field += c;
