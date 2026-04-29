@@ -28,29 +28,29 @@ time;adjusted_time;category;task;notes;responsible;location
 2026-05-02T20:07;;Tidplan;Målgång Herrklassen, sträcka 3;;Christer Johansson;Mål/Växel
 2026-05-02T20:45;;Tidplan;Incheckning Damklassen öppnar;;;
 2026-05-02T21:15;;Jaktstart;Skapa jaktstartlista Herrklassen;SQL, förutsatt att ingprotester finns;Samuel Henriksson;TA
-2026-05-02T21:15;;Jaktstart;Publicera Chasestartlist Men på Eventor;;;
+2026-05-02T21:15;;Jaktstart;Publicera Chasestartlist Men på Eventor;;Bo Granstedt;TA
 2026-05-02T21:15;;Jaktstart;Skriv ut startlistor till jaktstart Herrklassen;"10st Jaktstartlistor sorterade på starttider, 
 3st Jaktstartlistor sorterade på startnummer, 
-2st Startlista vågstart sorterad på startnummer";;
+2st Startlista vågstart sorterad på startnummer";Bo Granstedt;TA
 2026-05-02T21:15;;Jaktstart;Skapa jaktstartfil för Herrklassen;SQL;Samuel Henriksson;TA
 2026-05-02T21:30;;Tidplan;Start Damklassen;;;
-2026-05-02T21:40;;Admin;Registrera Ej start Damklassen;;;
-2026-05-02T22:00;;Förvarning;Justera förvarningsskärmar;501-600,601-700, 701-800;;
+2026-05-02T21:40;;Admin;Registrera Ej start Damklassen;;Bo Granstedt;TA
+2026-05-02T22:00;;Förvarning;Justera förvarningsskärmar;501-600,601-700, 701-800;Christer Johansson;Mål/Växel
 2026-05-02T22:00;;Skylt;Skylta upplopp för Dam sträcka 1;;Christer Johansson;Mål/Växel
 2026-05-02T22:28;;Tidplan;Första växling Damklassen;;;
 2026-05-02T22:55;;Skylt;Skylta upplopp för Dam sträcka 2;;Christer Johansson;Mål/Växel
 2026-05-02T23:00;;Tidplan;Jaktstart Herrklassen;;;
 2026-05-02T23:13;;Tidplan;Målgång Damklassen, sträcka 2;;;
-2026-05-03T00:00;;Förvarning;Justera förvarningsskärmar;1-100, 101-200, 201-350;;
+2026-05-03T00:00;;Förvarning;Justera förvarningsskärmar;1-100, 101-200, 201-350;Christer Johansson;Mål/Växel
 2026-05-03T00:00;;Tidplan;Vågstart Herrklassen;;;
-2026-05-03T00:10;;Admin;Registrera Ej start Herrklassen sträcka 4;;;
+2026-05-03T00:10;;Admin;Registrera Ej start Herrklassen sträcka 4;;Bo Granstedt;TA
 2026-05-03T00:15;;Skylt;Skylta upplopp för Herr sträcka 4;;Christer Johansson;Mål/Växel
 2026-05-03T00:20;;Jaktstart;Skapa jaktstartlista Damklassen;SQL, förutsatt att ingprotester finns;Samuel Henriksson;TA
 2026-05-03T00:20;;Jaktstart;Publicera Chasestartlist Women på Eventor;;Bo Granstedt;TA
 2026-05-03T00:20;;Jaktstart;Skriv ut startlistor till jaktstart Damklassen;"10st Jaktstartlistor sorterade på starttider, 
 3st Jaktstartlistor sorterade på startnummer,
- 2st Startlista vågstart sorterad på startnummer";;
-2026-05-03T00:20;;Jaktstart;Skapa jaktstartfil för Damklassen;SQL;;
+ 2st Startlista vågstart sorterad på startnummer";Bo Granstedt;TA
+2026-05-03T00:20;;Jaktstart;Skapa jaktstartfil för Damklassen;SQL;Samuel Henriksson;TA
 2026-05-03T00:50;;Skylt;Skylta upplopp för Herr sträcka 5;;Christer Johansson;Mål/Växel
 2026-05-03T01:30;;Skylt;Skylta upplopp för Herr sträcka 6;;Christer Johansson;Mål/Växel
 2026-05-03T02:00;;Skylt;Skylta upplopp för Herr sträcka 7;;Christer Johansson;Mål/Växel
@@ -60,9 +60,9 @@ time;adjusted_time;category;task;notes;responsible;location
 2026-05-03T05:40;;Skylt;Skylta upplopp för Herr sträcka 10;;Christer Johansson;Mål/Växel
 2026-05-03T06:00;;Mål;Målgång Herrklassen, avläsning vid mål;;;
 2026-05-03T06:00;;Tidplan;Vågstart Damklassen;;;
-2026-05-03T06:00;;Förvarning;Justera förvarningsskärmar;1-350, 501-650, 651-800;;
+2026-05-03T06:00;;Förvarning;Justera förvarningsskärmar;1-350, 501-650, 651-800;Christer Johansson;Mål/Växel
 2026-05-03T06:10;;Admin;Registrera Ej start Damklassen sträcka 3;;Bo Granstedt;TA
-2026-05-03T06:15;;Skylt;Skylta upplopp för Dam sträcka 3;Tveksamt, str 3 täten får gå I mål bland övriga för att inte krocka med Herr målgång;;
+2026-05-03T06:15;;Skylt;Skylta upplopp för Dam sträcka 3;Tveksamt, str 3 täten får gå I mål bland övriga för att inte krocka med Herr målgång;Christer Johansson;Mål/Växel
 2026-05-03T06:25;;Tidplan;Växling Damklassen str 3;;;
 2026-05-03T06:40;;Skylt;Skylta upplopp för Dam sträcka 4;;Christer Johansson;Mål/Växel
 2026-05-03T07:30;;Skylt;Skylta upplopp för Dam sträcka 5;;Christer Johansson;Mål/Växel
@@ -70,12 +70,12 @@ time;adjusted_time;category;task;notes;responsible;location
 2026-05-03T08:38;;Mål;Målgång Damklassen, avläsning vid mål;;;
 2026-05-03T09:05;;Växling;Växling stänger Herrklassen;Kontrollera exakt tid;Christer Johansson;Mål/Växel
 2026-05-03T09:15;;Växling;Omstart Herrklassen;Kontrollera exakt tid;Christer Johansson;Mål/Växel
-2026-05-03T09:20;;Admin;Prislista Dam/Herrklasser (10 pristagare);2 ex med laguppställning, förutsatt protester OK;;
-2026-05-03T09:20;;Admin;Sätt starttid omstartslag i Herrklassen;;;
-2026-05-03T09:20;;Admin;Registrera Ej start Herrklassen;;;
+2026-05-03T09:20;;Admin;Prislista Dam/Herrklasser (10 pristagare);2 ex med laguppställning, förutsatt protester OK;Bo Granstedt;TA
+2026-05-03T09:20;;Admin;Sätt starttid omstartslag i Herrklassen;;Samuel Henriksson;TA
+2026-05-03T09:20;;Admin;Registrera Ej start Herrklassen;;Bo Granstedt;TA
 2026-05-03T10:00;;Tidplan;Prisutdelning Dam/Herrklasser;;;
 2026-05-03T10:20;;Växling;Växling stänger Damklassen;Kontrollera exakt tid;Christer Johansson;Mål/Växel
 2026-05-03T10:30;;Växling;Omstart Damklassen;Kontrollera exakt tid;Christer Johansson;Mål/Växel
-2026-05-03T10:35;;Admin;Sätt starttid omstartslag i Damklassen;;;
-2026-05-03T10:35;;Admin;Registrera Ej start Damklassen;;;
+2026-05-03T10:35;;Admin;Sätt starttid omstartslag i Damklassen;;Samuel Henriksson;TA
+2026-05-03T10:35;;Admin;Registrera Ej start Damklassen;;Bo Granstedt;TA
 2026-05-03T13:00;;Tidplan;Målet stänger;;;
