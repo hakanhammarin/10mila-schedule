@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <title>10mila – Körschema</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap"
+  />
+  <style>
+    :root {
+      --bg: #0b0b0d;
+      --panel: #16161a;
+      --panel-2: #1d1d22;
+      --text: #e9e9ee;
+      --muted: #9aa0a6;
+      --line: #2a2a31;
+      --accent: #ff2a2a;
+      --accent-glow: 0 0 14px rgba(255, 42, 42, 0.55);
+
+      /* category colors mirrored from the Excel palette */
+      --cat-tidplan: #6c7280;
+      --cat-admin: #4caf50;
+      --cat-skylt: #f1c40f;
+      --cat-forvarning: #e67e22;
+      --cat-mal: #e74c3c;
+      --cat-vaxling: #00b0f0;
+      --cat-jaktstart: #0070c0;
+
+      --past-opacity: 0.7; /* 70% intensity remaining, per spec */
+      --focus-offset: 20vh; /* current event lands 20% from the top */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ---------- Studio clock ---------- */
+    header.clock-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: #000;
+      border-bottom: 1px solid #111;
+      padding: 14px 18px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: #b6b6bd;
+    }
+
+    .clock {
+      font-family: "Share Tech Mono", "Courier New", monospace;
+      font-size: clamp(40px, 9vw, 96px);
+      line-height: 1;
+      color: var(--accent);
+      text-shadow: var(--accent-glow);
+      letter-spacing: 0.04em;
+      font-weight: 400;
+      font-variant-numeric: tabular-nums;
+      user-select: none;
+    }
+
+    .clock .sep {
+      opacity: 0.85;
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      to {
+        opacity: 0.25;
+      }
+    }
+
+    .meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .meta .date {
+      color: #ddd;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* ---------- Schedule layout ---------- */
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px 16px 60vh; /* tail padding so the last item can sit at 20% */
+    }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 6px 4px 18px;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 96px 8px 1fr;
+      gap: 14px;
+      padding: 14px 14px 14px 0;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      margin-bottom: 10px;
+      transition: opacity 220ms ease, background 220ms ease,
+        border-color 220ms ease, transform 220ms ease;
+      scroll-margin-top: var(--focus-offset);
+    }
+
+    .event .time {
+      padding: 6px 10px 6px 14px;
+      font-family: "Share Tech Mono", monospace;
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      color: #ddd;
+      align-self: start;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .event .stripe {
+      background: var(--cat-color, var(--cat-tidplan));
+      border-radius: 4px;
+      align-self: stretch;
+    }
+
+    .event .body {
+      padding: 4px 4px 4px 0;
+      min-width: 0;
+    }
+
+    .event .row1 {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .event .task {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f4f4f7;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--cat-color, var(--cat-tidplan));
+      color: #0b0b0d;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .event .meta-row {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 2px;
+    }
+
+    .event .notes {
+      color: #cfd1d6;
+      font-size: 14px;
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+
+    .event.past {
+      opacity: var(--past-opacity);
+      background: var(--panel-2);
+    }
+
+    .event.future {
+      opacity: 1;
+    }
+
+    .event.current {
+      background: linear-gradient(180deg, #1f1300 0%, #2a1a02 100%);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 28px rgba(255, 42, 42, 0.2);
+      transform: translateZ(0);
+    }
+
+    .event.current .task {
+      color: #fff;
+    }
+
+    .event.current .now-pill {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      box-shadow: var(--accent-glow);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.55); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 42, 42, 0); }
+    }
+
+    .now-pill {
+      display: none;
+    }
+
+    .event[data-cat="Admin"] { --cat-color: var(--cat-admin); }
+    .event[data-cat="Skylt"] { --cat-color: var(--cat-skylt); }
+    .event[data-cat="Förvarning"] { --cat-color: var(--cat-forvarning); }
+    .event[data-cat="Mål"] { --cat-color: var(--cat-mal); }
+    .event[data-cat="Växling"] { --cat-color: var(--cat-vaxling); }
+    .event[data-cat="Jaktstart"] { --cat-color: var(--cat-jaktstart); }
+    .event[data-cat="Tidplan"] { --cat-color: var(--cat-tidplan); }
+
+    .day-divider {
+      margin: 22px 4px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+    }
+
+    .error {
+      background: #3a0d0d;
+      color: #ffd7d7;
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin: 14px 0;
+      border: 1px solid #6b1717;
+    }
+
+    @media (max-width: 600px) {
+      .event {
+        grid-template-columns: 70px 6px 1fr;
+        gap: 10px;
+      }
+      .event .time {
+        font-size: 18px;
+        padding-left: 10px;
+      }
+      .event .task {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="clock-bar">
+    <div class="brand">10mila · Körschema</div>
+    <div class="clock" id="clock" aria-live="off">
+      <span id="hh">00</span><span class="sep">:</span><span id="mm">00</span><span class="sep">:</span><span id="ss">00</span>
+    </div>
+    <div class="meta">
+      <div class="date" id="today">—</div>
+      <div id="status">laddar schema…</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="status-line" id="statusLine"></div>
+    <div id="schedule"></div>
+  </main>
+
+  <script>
+    // ---------- Configuration ----------
+    const CSV_URL = "schedule.csv";
+    const RECHECK_MS = 1000;          // tick the clock every second
+    const STATE_REFRESH_MS = 15000;   // re-evaluate which event is "current"
+    const SCROLL_REFRESH_MS = 30000;  // re-pin focus to current event
+    const CSV_RELOAD_MS = 5 * 60 * 1000; // pick up edits to the CSV
+
+    // ---------- CSV parser (handles quoted fields, embedded newlines, commas) ----------
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (text[i + 1] === '"') { field += '"'; i++; }
+            else { inQuotes = false; }
+          } else {
+            field += c;
+          }
+        } else {
+          if (c === '"') inQuotes = true;
+          else if (c === ",") { row.push(field); field = ""; }
+          else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+          else if (c === "\r") { /* skip */ }
+          else field += c;
+        }
+      }
+      if (field.length || row.length) { row.push(field); rows.push(row); }
+      while (rows.length && rows[rows.length - 1].every((v) => v === "")) rows.pop();
+      const header = rows.shift().map((h) => h.trim());
+      return rows.map((r) => {
+        const o = {};
+        header.forEach((h, idx) => { o[h] = (r[idx] ?? "").trim(); });
+        return o;
+      });
+    }
+
+    // ---------- Time helpers ----------
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function parseEventTime(iso) {
+      // CSV time format: 2026-05-02T14:30 (local time, no tz)
+      if (!iso) return null;
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (!m) return null;
+      return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0, 0);
+    }
+
+    function formatHHMM(d) {
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function formatDateLong(d) {
+      return d.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    // ---------- Render ----------
+    let events = [];
+    let lastCurrentIndex = -1;
+
+    function buildSchedule(rows) {
+      events = rows
+        .map((r) => {
+          const t = parseEventTime(r.adjusted_time || r.time);
+          if (!t) return null;
+          return {
+            time: t,
+            adjusted: !!r.adjusted_time && r.adjusted_time !== r.time,
+            category: r.category || "Tidplan",
+            task: r.task || "",
+            notes: r.notes || "",
+            responsible: r.responsible || "",
+            location: r.location || "",
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.time - b.time);
+
+      const root = document.getElementById("schedule");
+      root.innerHTML = "";
+
+      let lastDayKey = "";
+      events.forEach((ev, i) => {
+        const dayKey = ev.time.toDateString();
+        if (dayKey !== lastDayKey) {
+          const div = document.createElement("div");
+          div.className = "day-divider";
+          div.textContent = formatDateLong(ev.time);
+          root.appendChild(div);
+          lastDayKey = dayKey;
+        }
+
+        const node = document.createElement("article");
+        node.className = "event";
+        node.dataset.idx = String(i);
+        node.dataset.cat = ev.category;
+
+        const meta = [];
+        if (ev.responsible) meta.push(`Ansvarig: ${ev.responsible}`);
+        if (ev.location) meta.push(ev.location);
+
+        node.innerHTML = `
+          <div class="time">${formatHHMM(ev.time)}${ev.adjusted ? " *" : ""}</div>
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="row1">
+              <span class="badge">${escapeHtml(ev.category)}</span>
+              <span class="now-pill">NU</span>
+              <span class="task">${escapeHtml(ev.task)}</span>
+            </div>
+            ${meta.length ? `<div class="meta-row">${meta.map(escapeHtml).join(" · ")}</div>` : ""}
+            ${ev.notes ? `<div class="notes">${escapeHtml(ev.notes)}</div>` : ""}
+          </div>
+        `;
+        root.appendChild(node);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function findCurrentIndex(now) {
+      // Latest event whose start time is <= now. If none yet, the first
+      // upcoming event is treated as "current" so it sits at 20% from top.
+      let idx = -1;
+      for (let i = 0; i < events.length; i++) {
+        if (events[i].time <= now) idx = i;
+        else break;
+      }
+      if (idx === -1 && events.length) return 0;
+      return idx;
+    }
+
+    function applyState(now, { scroll = false } = {}) {
+      const cur = findCurrentIndex(now);
+      const nodes = document.querySelectorAll(".event");
+      nodes.forEach((node) => {
+        const i = +node.dataset.idx;
+        node.classList.remove("past", "current", "future");
+        if (i < cur) node.classList.add("past");
+        else if (i === cur) node.classList.add("current");
+        else node.classList.add("future");
+      });
+
+      const status = document.getElementById("status");
+      const statusLine = document.getElementById("statusLine");
+      if (cur >= 0 && events[cur]) {
+        const e = events[cur];
+        status.textContent = `Nu: ${formatHHMM(e.time)} – ${e.task}`;
+        const next = events[cur + 1];
+        statusLine.textContent = next
+          ? `Nästa kl ${formatHHMM(next.time)}: ${next.task}`
+          : "Sista händelsen.";
+      } else {
+        status.textContent = "Inga händelser.";
+        statusLine.textContent = "";
+      }
+
+      if (scroll && cur !== lastCurrentIndex && cur >= 0) {
+        scrollToCurrent();
+      }
+      lastCurrentIndex = cur;
+    }
+
+    function scrollToCurrent() {
+      const node = document.querySelector(".event.current");
+      if (!node) return;
+      const top =
+        node.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.2;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+
+    // ---------- Clock ----------
+    function tickClock() {
+      const now = new Date();
+      document.getElementById("hh").textContent = pad(now.getHours());
+      document.getElementById("mm").textContent = pad(now.getMinutes());
+      document.getElementById("ss").textContent = pad(now.getSeconds());
+      document.getElementById("today").textContent = formatDateLong(now);
+    }
+
+    // ---------- Bootstrap ----------
+    async function loadCSV() {
+      const url = `${CSV_URL}?t=${Date.now()}`; // cache-buster
+      const resp = await fetch(url, { cache: "no-store" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} loading ${CSV_URL}`);
+      const text = await resp.text();
+      const rows = parseCSV(text);
+      buildSchedule(rows);
+      applyState(new Date(), { scroll: true });
+    }
+
+    function showError(err) {
+      const root = document.getElementById("schedule");
+      const div = document.createElement("div");
+      div.className = "error";
+      div.textContent =
+        "Kunde inte ladda schedule.csv: " +
+        (err && err.message ? err.message : err) +
+        ". Kör sidan via en lokal webbserver (t.ex. python3 -m http.server) så att fetch fungerar.";
+      root.prepend(div);
+    }
+
+    tickClock();
+    setInterval(tickClock, RECHECK_MS);
+
+    loadCSV().catch((err) => {
+      console.error(err);
+      showError(err);
+    });
+
+    setInterval(() => applyState(new Date(), { scroll: false }), STATE_REFRESH_MS);
+    setInterval(() => applyState(new Date(), { scroll: true }), SCROLL_REFRESH_MS);
+    setInterval(() => loadCSV().catch((err) => console.warn("CSV reload failed", err)), CSV_RELOAD_MS);
+
+    // Re-pin if the user resizes (the 20% offset depends on viewport height).
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(scrollToCurrent, 200);
+    });
+  </script>
+</body>
+</html>
