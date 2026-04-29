@@ -1,40 +1,56 @@
 # 10mila Körschema – web one-pager
 
 A single-page web view of the 10mila TA / Mål / Växel schedule. The page reads
-its data from `schedule.csv`, which is generated from the source Excel file so
-the schedule can keep being maintained in Excel as before.
+its data from `schedule.csv`, which is generated from (or kept alongside) the
+source Excel file so the schedule can keep being maintained in Excel as before.
 
 ## What the page does
 
 - **TV-studio digital clock** at the very top — rolling seconds, red on black
   with a soft glow and a blinking colon, locked to the browser's local time.
 - **Auto-focus on the current minute.** The event whose start time is `≤ now`
-  (the latest one) is highlighted and pinned at **20 %** from the top of the
-  viewport.
-- **Auto-scroll** — when the current event changes, the page smoothly
-  re-scrolls so the new "now" event is back at the 20 % mark. State is
-  re-evaluated every 15 s and re-pinned every 30 s.
-- **Past events dimmed** to 70 % intensity (a slight gray-out, not a heavy
-  fade) so future events stay easy to scan.
+  (the latest one) is highlighted as the *current* event. The page scrolls so
+  that the **oldest event in the past-30-min window** sits just below the
+  clock; the highlighted current event therefore lands at a *variable*
+  position depending on how many past events are visible above it.
+- **Three intensity tiers:**
+  - *Future* events: full intensity.
+  - *Past, within the last 30 min*: 70 % opacity (slight gray, still easy to
+    read — these are the ones you usually still care about).
+  - *Past, older than 30 min*: 50 % opacity (more faded but still scrollable
+    to, not hidden).
+- **Auto-scroll** — every 5 s the page re-evaluates which event is current
+  and re-pins the focus, so you never need to scroll yourself. When you do
+  scroll manually (wheel / touch / arrow keys / PgUp / PgDn / Home / End /
+  space) there's a **6 s grace period** before the page snaps back, so you
+  can briefly look at something without the page yanking you. When the
+  active event changes the snap-back is immediate (no grace period).
 - **Color → category** — Excel cell fill colors on column C are pivoted into
   a readable `category` column in the CSV (and shown as a colored badge and
   side-stripe on the page). See the mapping below.
 - **Live CSV reload** — the page re-fetches `schedule.csv` every 5 minutes
   with a cache-buster, so updates pushed from Excel show up without a manual
-  refresh.
+  reload of the page.
 
 ## File layout
 
 ```
 .
 ├── TA - Körschema 2026 ver 1.xlsx   # source of truth (edit in Excel)
-├── convert.py                       # xlsx → schedule.csv
-├── schedule.csv                     # generated; checked in for convenience
+├── convert.py                       # xlsx → schedule.csv (color → category)
+├── schedule.csv                     # the data file the page reads
 ├── index.html                       # the one-pager (HTML + CSS + JS, no build)
 └── README.md
 ```
 
-## Updating the schedule from Excel
+## Updating the schedule
+
+You have two options. Pick whichever fits your workflow.
+
+### Option A — Edit Excel, run `convert.py`
+
+Use this when you want the cell-fill colors in column C to be auto-pivoted
+into the `category` column.
 
 1. Edit the `.xlsx` in Excel as usual (times, tasks, notes, colors).
 2. Regenerate the CSV:
@@ -42,39 +58,32 @@ the schedule can keep being maintained in Excel as before.
    pip install openpyxl     # one-time
    python3 convert.py
    ```
-   This rewrites `schedule.csv` from whatever `.xlsx` it finds next to the
-   script.
-3. Commit/deploy `schedule.csv` (and the `.xlsx` if you want to keep the
-   source under version control). The web page picks up the new CSV
-   automatically within ~5 minutes, or immediately on a manual reload.
+   This rewrites `schedule.csv` from whatever `.xlsx` it sits next to.
+3. Commit `schedule.csv` (and the `.xlsx` if you want the source under
+   version control).
 
-## Running the page
+### Option B — Edit Excel, "Save As CSV" directly
 
-`index.html` loads `schedule.csv` via `fetch`, which browsers refuse to do
-from `file://`. Serve the folder over HTTP — anything works:
-
-```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/
-```
-
-Or drop the three files (`index.html`, `schedule.csv`, optionally
-`convert.py`) onto any static host (GitHub Pages, Netlify, S3, an internal
-nginx, …).
+Use this when you'd rather skip Python and just save the sheet as a CSV
+straight out of Excel. With this path you maintain the `category` column
+yourself in the spreadsheet (no color-pivot), and Excel will write a
+**semicolon-delimited** CSV in Swedish/European locales — that's fine, the
+parser in `index.html` handles `;` as the field separator.
 
 ## CSV format
 
-`schedule.csv` is plain UTF-8 CSV with a header row. Columns:
+`schedule.csv` is plain UTF-8 CSV with a header row, semicolon-delimited.
+Columns:
 
-| column          | example                                | notes                                                                 |
-| --------------- | -------------------------------------- | --------------------------------------------------------------------- |
-| `time`          | `2026-05-02T14:30`                     | Local time, no timezone. Used as the event's start time.              |
-| `adjusted_time` | `2026-05-02T14:32`                     | Optional. If set, overrides `time` when sorting/highlighting.         |
-| `category`      | `Skylt`                                | Derived from the Excel cell color (see below). Drives the badge color. |
-| `task`          | `Skylta upplopp för Herr sträcka 1`    | Free text.                                                            |
-| `notes`         | `1001-1099, 1100-1199`                 | Free text. Multi-line OK (quote properly per RFC 4180).               |
-| `responsible`   | `Christer Johansson`                   | Free text.                                                            |
-| `location`      | `Mål/Växel`                            | Free text.                                                            |
+| column          | example                                | notes                                                                  |
+| --------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| `time`          | `2026-05-02T14:30`                     | Local time, no timezone. Used as the event's start time.               |
+| `adjusted_time` | `2026-05-02T14:32`                     | Optional. If set, overrides `time` when sorting/highlighting.          |
+| `category`      | `Skylt`                                | Drives the badge color. Generated by `convert.py`, or hand-maintained. |
+| `task`          | `Skylta upplopp för Herr sträcka 1`    | Free text.                                                             |
+| `notes`         | `1001-1099, 1100-1199`                 | Free text. Multi-line OK (quote properly per RFC 4180).                |
+| `responsible`   | `Christer Johansson`                   | Free text.                                                             |
+| `location`      | `Mål/Växel`                            | Free text.                                                             |
 
 You can hand-edit the CSV directly if you don't want to round-trip through
 Excel — the page only depends on the CSV.
@@ -98,11 +107,95 @@ If the schedule starts using a new color, add it to `COLOR_CATEGORIES` in
 `convert.py` and to the `--cat-*` CSS variables / `.event[data-cat="..."]`
 rules in `index.html`.
 
+## Running locally
+
+`index.html` loads `schedule.csv` via `fetch`, which browsers refuse to do
+from `file://`. Serve the folder over HTTP — anything works:
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/
+```
+
+## Hosting from GitHub
+
+The page is just three files (`index.html`, `schedule.csv`, optionally
+`convert.py`), so it can be served from any static host. Below are the
+GitHub-native options.
+
+### Easiest: GitHub Pages (recommended)
+
+1. Push the repo to GitHub.
+2. In the repo: **Settings → Pages → Build and deployment → Source: Deploy
+   from a branch → Branch: `main` / root** → **Save**.
+3. After ~30 s, GitHub gives you a URL like
+   `https://<your-username>.github.io/<repo>/`. Open it; the page works
+   immediately and `schedule.csv` is fetched from the same origin.
+4. Whenever you push a new `schedule.csv`, GitHub Pages updates within a
+   minute or two. The page itself reloads the CSV every 5 minutes, so on a
+   long-running display you don't even need to reload manually.
+
+CORS, MIME types and relative URLs all just work on Pages — this is the path
+of least resistance.
+
+### Quick share via "raw" GitHub URLs (proxied through a CDN)
+
+`raw.githubusercontent.com` itself serves HTML as `text/plain`, so opening
+the raw URL in a browser shows the source instead of the rendered page.
+There are free CDNs that proxy raw GitHub files with the correct content
+types — any of these works without configuring Pages:
+
+| Service       | URL pattern                                                                     | Notes                                                                  |
+| ------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **githack**   | `https://raw.githack.com/<user>/<repo>/<branch>/index.html`                     | "Production" endpoint; cached. Use `rawcdn.githack.com` for permanent (commit-pinned) URLs. |
+| **statically**| `https://cdn.statically.io/gh/<user>/<repo>/<branch>/index.html`                | Generous free tier, global CDN.                                        |
+| **jsDelivr**  | `https://cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/index.html`                 | Aggressive caching (good for prod, can lag a few minutes after a push). |
+
+Examples (replace `<user>/<repo>` with your fork):
+
+```
+https://raw.githack.com/<user>/<repo>/main/index.html
+https://cdn.statically.io/gh/<user>/<repo>/main/index.html
+https://cdn.jsdelivr.net/gh/<user>/<repo>@main/index.html
+```
+
+Because `index.html` fetches `schedule.csv` with a relative URL, the CSV is
+loaded from the same CDN path next to it — no extra configuration needed.
+
+Two practical caveats for the CDN approach:
+
+- **Caching**: jsDelivr caches for ~12 h on the `@main` URL. If you need a
+  fresh `schedule.csv` *now*, either pin to a commit
+  (`@<commit-sha>/schedule.csv`) and bump the URL, or use `raw.githack.com`,
+  which respects updates faster. The page's built-in 5-minute CSV reload
+  appends a `?t=<timestamp>` cache-buster on every fetch, so once the CDN
+  has picked up the new file the page sees it on the next tick.
+- **Privacy**: anyone with the URL can see the page. Your repo must be
+  public for these CDNs to serve it. If the schedule is sensitive, host it
+  somewhere with auth instead.
+
+### Other static hosts
+
+The same three files drop straight onto Netlify / Vercel / Cloudflare Pages
+/ S3+CloudFront / an internal nginx — no build, no server-side code.
+
 ## Tweaking the layout
 
 All the knobs live in the `:root` block at the top of `index.html`:
 
-- `--past-opacity` — how dim past events are. Default `0.7` (70 % intensity
-  remaining).
-- `--focus-offset` — where the current event sits. Default `20vh`.
+- `--past-opacity` — how dim *recent* (≤ 30 min) past events are.
+  Default `0.7`.
+- `--long-past-opacity` — how dim *older* past events are. Default `0.5`.
+- `--focus-gap` — pixels of breathing room between the sticky clock and the
+  pinned event. Default `12px`.
 - `--accent` / `--accent-glow` — clock color and glow.
+
+And a few JS constants near the top of the `<script>` block:
+
+- `PAST_WINDOW_MS` — how far back the 70 % "recent past" window stretches.
+  Default `30 * 60 * 1000` (30 min).
+- `FOCUS_TICK_MS` — how often the page re-pins the focus. Default `5000`.
+- `USER_SCROLL_GRACE_MS` — pause window after a manual gesture before the
+  page snaps back. Default `6000`.
+- `CSV_RELOAD_MS` — how often the CSV is re-fetched. Default `300000`
+  (5 min).
